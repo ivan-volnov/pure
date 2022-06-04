@@ -151,10 +151,6 @@ prompt_pure_preprompt_render() {
 	if [[ -n $prompt_pure_vcs_info[action] ]]; then
 		preprompt_parts+=("%F{$prompt_pure_colors[git:action]}"'$prompt_pure_vcs_info[action]%f')
 	fi
-	# Git pull/push arrows.
-	if [[ -n $prompt_pure_git_arrows ]]; then
-		preprompt_parts+=('%F{$prompt_pure_colors[git:arrow]}${prompt_pure_git_arrows}%f')
-	fi
 	# Git stash symbol (if opted in).
 	if [[ -n $prompt_pure_git_stash ]]; then
 		preprompt_parts+=('%F{$prompt_pure_colors[git:stash]}${PURE_GIT_STASH_SYMBOL:-≡}%f')
@@ -311,11 +307,6 @@ prompt_pure_async_git_dirty() {
 	return $?
 }
 
-prompt_pure_async_git_arrows() {
-	setopt localoptions noshwordsplit
-	command git rev-list --left-right --count HEAD...@'{u}'
-}
-
 prompt_pure_async_git_stash() {
 	git rev-list --walk-reflogs --count refs/stash
 }
@@ -364,7 +355,6 @@ prompt_pure_async_tasks() {
 		# Reset Git preprompt variables, switching working tree.
 		unset prompt_pure_git_dirty
 		unset prompt_pure_git_last_dirty_check_timestamp
-		unset prompt_pure_git_arrows
 		unset prompt_pure_git_stash
 		unset prompt_pure_git_fetch_pattern
 		prompt_pure_vcs_info[branch]=
@@ -390,8 +380,6 @@ prompt_pure_async_refresh() {
 		async_job "prompt_pure" prompt_pure_async_git_aliases
 	fi
 
-	async_job "prompt_pure" prompt_pure_async_git_arrows
-
 	# If dirty checking is sufficiently fast,
 	# tell the worker to check it again, or wait for timeout.
 	integer time_since_last_dirty_check=$(( EPOCHSECONDS - ${prompt_pure_git_last_dirty_check_timestamp:-0} ))
@@ -407,17 +395,6 @@ prompt_pure_async_refresh() {
 	else
 		unset prompt_pure_git_stash
 	fi
-}
-
-prompt_pure_check_git_arrows() {
-	setopt localoptions noshwordsplit
-	local arrows left=${1:-0} right=${2:-0}
-
-	(( right > 0 )) && arrows+=${PURE_GIT_DOWN_ARROW:-⇣}
-	(( left > 0 )) && arrows+=${PURE_GIT_UP_ARROW:-⇡}
-
-	[[ -n $arrows ]] || return
-	typeset -g REPLY=$arrows
 }
 
 prompt_pure_async_callback() {
@@ -506,36 +483,6 @@ prompt_pure_async_callback() {
 			# preprompt is rendered before setting this variable. Thus, only upon the next
 			# rendering of the preprompt will the result appear in a different color.
 			(( $exec_time > 5 )) && prompt_pure_git_last_dirty_check_timestamp=$EPOCHSECONDS
-			;;
-		prompt_pure_async_git_arrows)
-			case $code in
-				0)
-					local REPLY
-					prompt_pure_check_git_arrows ${(ps:\t:)output}
-					if [[ $prompt_pure_git_arrows != $REPLY ]]; then
-						typeset -g prompt_pure_git_arrows=$REPLY
-						do_render=1
-					fi
-					;;
-				97)
-					# No remote available, make sure to clear git arrows if set.
-					if [[ -n $prompt_pure_git_arrows ]]; then
-						typeset -g prompt_pure_git_arrows=
-						do_render=1
-					fi
-					;;
-				99|98)
-					# Git fetch failed.
-					;;
-				*)
-					# Non-zero exit status from `prompt_pure_async_git_arrows`,
-					# indicating that there is no upstream configured.
-					if [[ -n $prompt_pure_git_arrows ]]; then
-						unset prompt_pure_git_arrows
-						do_render=1
-					fi
-					;;
-			esac
 			;;
 		prompt_pure_async_git_stash)
 			local prev_stash=$prompt_pure_git_stash
@@ -737,7 +684,6 @@ prompt_pure_setup() {
 	typeset -gA prompt_pure_colors_default prompt_pure_colors
 	prompt_pure_colors_default=(
 		execution_time       yellow
-		git:arrow            cyan
 		git:stash            cyan
 		git:branch           242
 		git:branch:cached    red
