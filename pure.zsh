@@ -120,10 +120,8 @@ prompt_pure_preprompt_render() {
 
 	unset prompt_pure_async_render_requested
 
-	# Set color for Git branch/dirty status and change color if dirty checking has been delayed.
+	# Set color for Git branch status
 	local git_color=$prompt_pure_colors[git:branch]
-	local git_dirty_color=$prompt_pure_colors[git:dirty]
-	[[ -n ${prompt_pure_git_last_dirty_check_timestamp+x} ]] && git_color=$prompt_pure_colors[git:branch:cached]
 
 	# Initialize the preprompt array.
 	local -a preprompt_parts
@@ -139,10 +137,10 @@ prompt_pure_preprompt_render() {
 	# Set the path.
 	preprompt_parts+=('%F{${prompt_pure_colors[path]}}%~%f')
 
-	# Git branch and dirty status info.
+	# Git branch status info.
 	typeset -gA prompt_pure_vcs_info
 	if [[ -n $prompt_pure_vcs_info[branch] ]]; then
-		preprompt_parts+=("%F{$git_color}"'${prompt_pure_vcs_info[branch]}'"%F{$git_dirty_color}"'${prompt_pure_git_dirty}%f')
+		preprompt_parts+=("%F{$git_color}"'${prompt_pure_vcs_info[branch]}''%f')
 	fi
 
 	# Execution time.
@@ -195,7 +193,7 @@ prompt_pure_precmd() {
 	# Modify the colors if some have changed..
 	prompt_pure_set_colors
 
-	# Perform async Git dirty check and fetch.
+	# Perform async Git fetch
 	prompt_pure_async_tasks
 
 	# Check if we should display the virtual env. We use a sufficiently high
@@ -276,24 +274,6 @@ prompt_pure_async_vcs_info() {
 	print -r - ${(@kvq)info}
 }
 
-# Fastest possible way to check if a Git repo is dirty.
-prompt_pure_async_git_dirty() {
-	setopt localoptions noshwordsplit
-	local untracked_dirty=$1
-	local untracked_git_mode=$(command git config --get status.showUntrackedFiles)
-	if [[ "$untracked_git_mode" != 'no' ]]; then
-		untracked_git_mode='normal'
-	fi
-
-	if [[ $untracked_dirty = 0 ]]; then
-		command git diff --no-ext-diff --quiet --exit-code
-	else
-		test -z "$(GIT_OPTIONAL_LOCKS=0 command git status --porcelain --ignore-submodules -u${untracked_git_mode})"
-	fi
-
-	return $?
-}
-
 # Try to lower the priority of the worker so that disk heavy operations
 # like `git status` has less impact on the system responsivity.
 prompt_pure_async_renice() {
@@ -336,8 +316,6 @@ prompt_pure_async_tasks() {
 		async_flush_jobs "prompt_pure"
 
 		# Reset Git preprompt variables, switching working tree.
-		unset prompt_pure_git_dirty
-		unset prompt_pure_git_last_dirty_check_timestamp
 		unset prompt_pure_git_fetch_pattern
 		prompt_pure_vcs_info[branch]=
 		prompt_pure_vcs_info[top]=
@@ -360,15 +338,6 @@ prompt_pure_async_refresh() {
 		# working tree has changed. Pull and fetch are always valid patterns.
 		typeset -g prompt_pure_git_fetch_pattern="pull|fetch"
 		async_job "prompt_pure" prompt_pure_async_git_aliases
-	fi
-
-	# If dirty checking is sufficiently fast,
-	# tell the worker to check it again, or wait for timeout.
-	integer time_since_last_dirty_check=$(( EPOCHSECONDS - ${prompt_pure_git_last_dirty_check_timestamp:-0} ))
-	if (( time_since_last_dirty_check > ${PURE_GIT_DELAY_DIRTY_CHECK:-1800} )); then
-		unset prompt_pure_git_last_dirty_check_timestamp
-		# Check check if there is anything to pull.
-		async_job "prompt_pure" prompt_pure_async_git_dirty ${PURE_GIT_UNTRACKED_DIRTY:-1}
 	fi
 }
 
@@ -441,22 +410,6 @@ prompt_pure_async_callback() {
 				# Append custom Git aliases to the predefined ones.
 				prompt_pure_git_fetch_pattern+="|$output"
 			fi
-			;;
-		prompt_pure_async_git_dirty)
-			local prev_dirty=$prompt_pure_git_dirty
-			if (( code == 0 )); then
-				unset prompt_pure_git_dirty
-			else
-				typeset -g prompt_pure_git_dirty="*"
-			fi
-
-			[[ $prev_dirty != $prompt_pure_git_dirty ]] && do_render=1
-
-			# When `prompt_pure_git_last_dirty_check_timestamp` is set, the Git info is displayed
-			# in a different color. To distinguish between a "fresh" and a "cached" result, the
-			# preprompt is rendered before setting this variable. Thus, only upon the next
-			# rendering of the preprompt will the result appear in a different color.
-			(( $exec_time > 5 )) && prompt_pure_git_last_dirty_check_timestamp=$EPOCHSECONDS
 			;;
 	esac
 
@@ -654,8 +607,6 @@ prompt_pure_setup() {
 	prompt_pure_colors_default=(
 		execution_time       yellow
 		git:branch           242
-		git:branch:cached    red
-		git:dirty            218
 		host                 242
 		path                 blue
 		prompt:error         red

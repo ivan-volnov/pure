@@ -14,7 +14,6 @@ Most prompts are cluttered, ugly and slow. We wanted something visually pleasing
 
 - Comes with the perfect prompt character.
   Author went through the whole Unicode range to find it.
-- Shows `git` branch and whether it's dirty (with a `*`).
 - Indicates when you have unpushed/unpulled `git` commits with up/down arrows. *(Check is done asynchronously!)*
 - Prompt character turns red if the last command didn't exit with `0`.
 - Command execution time will be displayed if it exceeds the set threshold.
@@ -61,8 +60,6 @@ prompt pure
 | :------------------------------- | :--------------------------------------------------------------------------------------------- | :------------- |
 | **`PURE_CMD_MAX_EXEC_TIME`**     | The max execution time of a process before its run time is shown when it exits.                | `5` seconds    |
 | **`PURE_GIT_PULL=0`**            | Prevents Pure from checking whether the current Git remote has been updated.                   |                |
-| **`PURE_GIT_UNTRACKED_DIRTY=0`** | Do not include untracked files in dirtiness check. Mostly useful on large repos (like WebKit). |                |
-| **`PURE_GIT_DELAY_DIRTY_CHECK`** | Time in seconds to delay git dirty checking when `git status` takes > 5 seconds.               | `1800` seconds |
 | **`PURE_PROMPT_SYMBOL`**         | Defines the prompt symbol.                                                                     | `❯`            |
 | **`PURE_PROMPT_VICMD_SYMBOL`**   | Defines the prompt symbol used when the `vicmd` keymap is active (VI-mode).                    | `❮`            |
 
@@ -86,8 +83,6 @@ As explained in ZSH's [manual](http://zsh.sourceforge.net/Doc/Release/Zsh-Line-E
 Colors can be changed by using [`zstyle`](http://zsh.sourceforge.net/Doc/Release/Zsh-Modules.html#The-zsh_002fzutil-Module) with a pattern of the form `:prompt:pure:$color_name` and style `color`. The color names, their default, and what part they affect are:
 - `execution_time` (yellow) - The execution time of the last command when exceeding `PURE_CMD_MAX_EXEC_TIME`.
 - `git:branch` (242) - The name of the current branch when in a Git repository.
-- `git:branch:cached` (red) - The name of the current branch when the data isn't fresh.
-- `git:dirty` (218) - The asterisk showing the branch is dirty.
 - `host` (242) - The hostname when on a remote machine.
 - `path` (blue) - The current path, for example, `PWD`.
 - `prompt:error` (red) - The `PURE_PROMPT_SYMBOL` when the previous command has *failed*.
@@ -101,21 +96,21 @@ Colors can be changed by using [`zstyle`](http://zsh.sourceforge.net/Doc/Release
 The following diagram shows where each color is applied on the prompt:
 
 ```
-┌─────────────────────────────────────────────── user
-│      ┌──────────────────────────────────────── host
-│      │           ┌──────────────────────────── path
-│      │           │          ┌───────────────── git:branch
-│      │           │          │     ┌─────────── git:dirty
-│      │           │          │     │
-│      │           │          │     │
-│      │           │          │     │
-│      │           │          │     │ ┌───────── execution_time
-│      │           │          │     │ │
-zaphod@heartofgold ~/dev/pure master* 42s
+┌─────────────────────────────────────────────────── user
+│      ┌──────────────────────────────────────────── host
+│      │           ┌──────────────────────────────── path
+│      │           │          ┌───────────────────── git:branch
+│      │           │          │
+│      │           │          │
+│      │           │          │
+│      │           │          │
+│      │           │          │      ┌────────────── execution_time
+│      │           │          │      │
+zaphod@heartofgold ~/dev/pure master 42s
 venv ❯
 │    │
-│    └────────────────────────────────────────── prompt
-└─────────────────────────────────────────────── virtualenv (or prompt:continuation)
+│    └────────────────────────────────────────────── prompt
+└─────────────────────────────────────────────────── virtualenv (or prompt:continuation)
 ```
 
 ### RGB colors
@@ -159,12 +154,6 @@ prompt pure
 
 **NOTE:** `oh-my-zsh` overrides the prompt so Pure must be activated *after* `source $ZSH/oh-my-zsh.sh`.
 
-### [prezto](https://github.com/sorin-ionescu/prezto)
-
-Pure is bundled with Prezto. No need to install it.
-
-Add `prompt pure` to your `~/.zpreztorc`.
-
 ### [zim](https://github.com/Eriner/zim)
 
 Add `zmodule ivan-volnov/pure --source async.zsh --source pure.zsh` to your `.zimrc` and run `zimfw install`.
@@ -186,23 +175,3 @@ Update your `.zshrc` file with the following two lines (order matters):
 zinit ice compile'(pure|async).zsh' pick'async.zsh' src'pure.zsh'
 zinit light ivan-volnov/pure
 ```
-
-## Ports
-
-- **ZSH**
-	- [therealklanni/purity](https://github.com/therealklanni/purity) - More compact current working directory, important details on the main prompt line, and extra Git indicators.
- 	- [intelfx/pure](https://github.com/intelfx/pure) - Solarized-friendly colors, highly verbose, and fully async Git integration.
-	- [forivall/pure](https://github.com/forivall/pure) - A minimal fork which highlights the Git repo's root directory in the path.
-	- [dfurnes/purer](https://github.com/dfurnes/purer) - Compact single-line prompt with built-in Vim-mode indicator.
-	- [chabou/pure-now](https://github.com/chabou/pure-now) - Fork with [Now](https://zeit.co/now) support.
-	- [pure10k](https://gist.github.com/romkatv/7cbab80dcbc639003066bb68b9ae0bbf) - Configuration file for [Powerlevel10k](https://github.com/romkatv/powerlevel10k/) that makes it look like Pure.
-- **Bash**
-	- [sapegin/dotfiles](https://github.com/sapegin/dotfiles) - [Prompt](https://github.com/sapegin/dotfiles/blob/dd063f9c30de7d2234e8accdb5272a5cc0a3388b/includes/bash_prompt.bash) and [color theme](https://github.com/sapegin/dotfiles/tree/master/color) for Terminal.app.
-- **Fish**
-	- [pure-fish/pure](https://github.com/pure-fish/pure) - Fully tested Fish port aiming for feature parity.
-- **Rust**
-	- [xcambar/purs](https://github.com/xcambar/purs) - Pure-inspired prompt in Rust.
-- **Go**
-	- [talal/mimir](https://github.com/talal/mimir) - Pure-inspired prompt in Go with Kubernetes and OpenStack cloud support. Not intended to have feature parity.
-- **PowerShell**
-	- [nickcox/pure-pwsh](https://github.com/nickcox/pure-pwsh/) - PowerShell/PS Core implementation of the Pure prompt.
