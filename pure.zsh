@@ -151,10 +151,6 @@ prompt_pure_preprompt_render() {
 	if [[ -n $prompt_pure_vcs_info[action] ]]; then
 		preprompt_parts+=("%F{$prompt_pure_colors[git:action]}"'$prompt_pure_vcs_info[action]%f')
 	fi
-	# Git stash symbol (if opted in).
-	if [[ -n $prompt_pure_git_stash ]]; then
-		preprompt_parts+=('%F{$prompt_pure_colors[git:stash]}${PURE_GIT_STASH_SYMBOL:-≡}%f')
-	fi
 
 	# Execution time.
 	[[ -n $prompt_pure_cmd_exec_time ]] && preprompt_parts+=('%F{$prompt_pure_colors[execution_time]}${prompt_pure_cmd_exec_time}%f')
@@ -307,10 +303,6 @@ prompt_pure_async_git_dirty() {
 	return $?
 }
 
-prompt_pure_async_git_stash() {
-	git rev-list --walk-reflogs --count refs/stash
-}
-
 # Try to lower the priority of the worker so that disk heavy operations
 # like `git status` has less impact on the system responsivity.
 prompt_pure_async_renice() {
@@ -355,7 +347,6 @@ prompt_pure_async_tasks() {
 		# Reset Git preprompt variables, switching working tree.
 		unset prompt_pure_git_dirty
 		unset prompt_pure_git_last_dirty_check_timestamp
-		unset prompt_pure_git_stash
 		unset prompt_pure_git_fetch_pattern
 		prompt_pure_vcs_info[branch]=
 		prompt_pure_vcs_info[top]=
@@ -387,13 +378,6 @@ prompt_pure_async_refresh() {
 		unset prompt_pure_git_last_dirty_check_timestamp
 		# Check check if there is anything to pull.
 		async_job "prompt_pure" prompt_pure_async_git_dirty ${PURE_GIT_UNTRACKED_DIRTY:-1}
-	fi
-
-	# If stash is enabled, tell async worker to count stashes
-	if zstyle -t ":prompt:pure:git:stash" show; then
-		async_job "prompt_pure" prompt_pure_async_git_stash
-	else
-		unset prompt_pure_git_stash
 	fi
 }
 
@@ -455,7 +439,7 @@ prompt_pure_async_callback() {
 			# Git directory. Run the async refresh tasks.
 			[[ -n $info[top] ]] && [[ -z $prompt_pure_vcs_info[top] ]] && prompt_pure_async_refresh
 
-			# Always update branch, top-level and stash.
+			# Always update branch, top-level
 			prompt_pure_vcs_info[branch]=$info[branch]
 			prompt_pure_vcs_info[top]=$info[top]
 			prompt_pure_vcs_info[action]=$info[action]
@@ -483,11 +467,6 @@ prompt_pure_async_callback() {
 			# preprompt is rendered before setting this variable. Thus, only upon the next
 			# rendering of the preprompt will the result appear in a different color.
 			(( $exec_time > 5 )) && prompt_pure_git_last_dirty_check_timestamp=$EPOCHSECONDS
-			;;
-		prompt_pure_async_git_stash)
-			local prev_stash=$prompt_pure_git_stash
-			typeset -g prompt_pure_git_stash=$output
-			[[ $prev_stash != $prompt_pure_git_stash ]] && do_render=1
 			;;
 	esac
 
@@ -684,7 +663,6 @@ prompt_pure_setup() {
 	typeset -gA prompt_pure_colors_default prompt_pure_colors
 	prompt_pure_colors_default=(
 		execution_time       yellow
-		git:stash            cyan
 		git:branch           242
 		git:branch:cached    red
 		git:action           yellow
