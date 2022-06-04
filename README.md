@@ -2,51 +2,11 @@
 
 > Pretty, minimal and fast ZSH prompt
 
+Lightweight fork of popular pure.zsh prompt by sindresorhus
+
 <img src="screenshot.png" width="864">
 
-<br>
-
 ---
-
-<div align="center">
-	<p>
-		<p>
-			<sup>
-				<a href="https://github.com/sponsors/sindresorhus">Sindre Sorhus' open source work is supported by the community</a>
-			</sup>
-		</p>
-		<sup>Special thanks to:</sup>
-		<br>
-		<br>
-		<br>
-		<a href="https://standardresume.co/tech">
-			<img src="https://sindresorhus.com/assets/thanks/standard-resume-logo.svg" width="200"/>
-		</a>
-		<br>
-		<br>
-		<br>
-		<a href="https://www.gitpod.io/?utm_campaign=sindresorhus&utm_medium=referral&utm_content=awesome&utm_source=github">
-			<div>
-				<img src="https://sindresorhus.com/assets/thanks/gitpod-logo-white-bg.svg" width="240" alt="Gitpod">
-			</div>
-			<b>Dev environments built for the cloud</b>
-			<div>
-				<sub>
-				Natively integrated with GitLab, GitHub, and Bitbucket, Gitpod automatically and continuously prebuilds dev
-				<br>
-				environments for all your branches. As a result team members can instantly start coding with fresh dev environments
-				<br>
-				for each new task - no matter if you are building a new feature, want to fix a bug, or work on a code review.
-				</sub>
-			</div>
-		</a>
-		<br>
-	</p>
-</div>
-
----
-
-<br>
 
 ## Overview
 
@@ -65,37 +25,26 @@ Most prompts are cluttered, ugly and slow. We wanted something visually pleasing
 - Support VI-mode indication by reverse prompt symbol (Zsh 5.3+).
 - Makes an excellent starting point for your own custom prompt.
 
+### The fork goal
+
+- Remove second zsh instance per open console
+- Code cleanup
+
 ## Install
-
-Can be installed with `npm` or manually. Requires Git 2.15.2+ and ZSH 5.2+. Older versions of ZSH are known to work, but they are **not** recommended.
-
-### npm
-
-```sh
-npm install --global pure-prompt
-```
-
-That's it. Skip to [Getting started](#getting-started).
-
-### [Homebrew](https://brew.sh)
-
-```sh
-brew install pure
-```
 
 ### Manually
 
-1. Clone this repo somewhere. Here we'll use `$HOME/.zsh/pure`.
+1. Clone this repo somewhere. Here we'll use `$HOME/.config/zsh/pure`.
 
 ```sh
-mkdir -p "$HOME/.zsh"
-git clone https://github.com/sindresorhus/pure.git "$HOME/.zsh/pure"
+mkdir -p "$HOME/.config/zsh"
+git clone https://github.com/ivan-volnov/pure.git "$HOME/.config/zsh/pure"
 ```
 
 2. Add the path of the cloned repo to `$fpath` in `$HOME/.zshrc`.
 ```sh
 # .zshrc
-fpath+=$HOME/.zsh/pure
+fpath+=$HOME/.config/zsh/pure
 ```
 
 ## Getting started
@@ -215,15 +164,6 @@ zstyle :prompt:pure:git:stash show yes
 prompt pure
 ```
 
-## Tips
-
-In the screenshot you see Pure running in [Hyper](https://hyper.is) with the [hyper-snazzy](https://github.com/sindresorhus/hyper-snazzy) theme and Menlo font.
-
-The [Tomorrow Night Eighties](https://github.com/chriskempson/tomorrow-theme) theme with the [Droid Sans Mono](https://www.fontsquirrel.com/fonts/droid-sans-mono) font (15pt) is also a [nice combination](https://github.com/sindresorhus/pure/blob/95ee3e7618c6e2162a1e3cdac2a88a20ac3beb27/screenshot.png).<br>
-*Just make sure you have anti-aliasing enabled in your terminal.*
-
-To have commands colorized as seen in the screenshot, install [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting).
-
 ## Integration
 
 ### [oh-my-zsh](https://github.com/robbyrussell/oh-my-zsh)
@@ -242,7 +182,7 @@ Add `prompt pure` to your `~/.zpreztorc`.
 
 ### [zim](https://github.com/Eriner/zim)
 
-Add `zmodule sindresorhus/pure --source async.zsh --source pure.zsh` to your `.zimrc` and run `zimfw install`.
+Add `zmodule ivan-volnov/pure --source async.zsh --source pure.zsh` to your `.zimrc` and run `zimfw install`.
 
 ### [zplug](https://github.com/zplug/zplug)
 
@@ -250,7 +190,7 @@ Update your `.zshrc` file with the following two lines:
 
 ```sh
 zplug mafredri/zsh-async, from:github
-zplug sindresorhus/pure, use:pure.zsh, from:github, as:theme
+zplug ivan-volnov/pure, use:pure.zsh, from:github, as:theme
 ```
 
 ### [zinit](https://github.com/zdharma/zinit)
@@ -259,14 +199,8 @@ Update your `.zshrc` file with the following two lines (order matters):
 
 ```sh
 zinit ice compile'(pure|async).zsh' pick'async.zsh' src'pure.zsh'
-zinit light sindresorhus/pure
+zinit light ivan-volnov/pure
 ```
-
-## FAQ
-
-There are currently no FAQs.
-
-See [FAQ Archive](https://github.com/sindresorhus/pure/wiki/FAQ-Archive) for previous FAQs.
 
 ## Ports
 
@@ -287,9 +221,3 @@ See [FAQ Archive](https://github.com/sindresorhus/pure/wiki/FAQ-Archive) for pre
 	- [talal/mimir](https://github.com/talal/mimir) - Pure-inspired prompt in Go with Kubernetes and OpenStack cloud support. Not intended to have feature parity.
 - **PowerShell**
 	- [nickcox/pure-pwsh](https://github.com/nickcox/pure-pwsh/) - PowerShell/PS Core implementation of the Pure prompt.
-
-## Team
-
-[![Sindre Sorhus](https://github.com/sindresorhus.png?size=100)](https://sindresorhus.com) | [![Mathias Fredriksson](https://github.com/mafredri.png?size=100)](https://github.com/mafredri)
----|---
-[Sindre Sorhus](https://github.com/sindresorhus) | [Mathias Fredriksson](https://github.com/mafredri)
