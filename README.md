@@ -23,8 +23,9 @@ Most prompts are cluttered, ugly and slow. We wanted something visually pleasing
 
 ### The fork goal
 
-- Remove a useless zsh subprocess per each instance (async workers)
-- Code cleanup and simplicity
+- Remove useless zsh subprocess per each instance (async workers)
+- Debloat the code that executes every time you open a terminal window
+- The prompt must only tell you where you are now. It's not a fancy git tool
 
 ### The prompt structure
 
