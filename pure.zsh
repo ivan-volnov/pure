@@ -274,20 +274,6 @@ prompt_pure_async_vcs_info() {
 	print -r - ${(@kvq)info}
 }
 
-# Try to lower the priority of the worker so that disk heavy operations
-# like `git status` has less impact on the system responsivity.
-prompt_pure_async_renice() {
-	setopt localoptions noshwordsplit
-
-	if command -v renice >/dev/null; then
-		command renice +15 -p $$
-	fi
-
-	if command -v ionice >/dev/null; then
-		command ionice -c 3 -p $$
-	fi
-}
-
 prompt_pure_async_init() {
 	typeset -g prompt_pure_async_inited
 	if ((${prompt_pure_async_inited:-0})); then
@@ -296,7 +282,6 @@ prompt_pure_async_init() {
 	prompt_pure_async_inited=1
 	async_start_worker "prompt_pure" -u -n
 	async_register_callback "prompt_pure" prompt_pure_async_callback
-	async_worker_eval "prompt_pure" prompt_pure_async_renice
 }
 
 prompt_pure_async_tasks() {
@@ -518,60 +503,6 @@ prompt_pure_is_inside_container() {
 	[[ -r "$cgroup_file" && "$(< $cgroup_file)" = *(lxc|docker)* ]] \
 		|| [[ "$container" == "lxc" ]] \
 		|| [[ -r "$nspawn_file" ]]
-}
-
-prompt_pure_system_report() {
-	setopt localoptions noshwordsplit
-
-	local shell=$SHELL
-	if [[ -z $shell ]]; then
-		shell=$commands[zsh]
-	fi
-	print - "- Zsh: $($shell --version) ($shell)"
-	print -n - "- Operating system: "
-	case "$(uname -s)" in
-		Darwin)	print "$(sw_vers -productName) $(sw_vers -productVersion) ($(sw_vers -buildVersion))";;
-		*)	print "$(uname -s) ($(uname -r) $(uname -v) $(uname -m) $(uname -o))";;
-	esac
-	print - "- Terminal program: ${TERM_PROGRAM:-unknown} (${TERM_PROGRAM_VERSION:-unknown})"
-	print -n - "- Tmux: "
-	[[ -n $TMUX ]] && print "yes" || print "no"
-
-	local git_version
-	git_version=($(git --version))  # Remove newlines, if hub is present.
-	print - "- Git: $git_version"
-
-	print - "- Pure state:"
-	for k v in "${(@kv)prompt_pure_state}"; do
-		print - "    - $k: \`${(q-)v}\`"
-	done
-	print - "- zsh-async version: \`${ASYNC_VERSION}\`"
-	print - "- PROMPT: \`$(typeset -p PROMPT)\`"
-	print - "- Colors: \`$(typeset -p prompt_pure_colors)\`"
-	print - "- TERM: \`$(typeset -p TERM)\`"
-	print - "- Virtualenv: \`$(typeset -p VIRTUAL_ENV_DISABLE_PROMPT)\`"
-	print - "- Conda: \`$(typeset -p CONDA_CHANGEPS1)\`"
-
-	local ohmyzsh=0
-	typeset -la frameworks
-	(( $+ANTIBODY_HOME )) && frameworks+=("Antibody")
-	(( $+ADOTDIR )) && frameworks+=("Antigen")
-	(( $+ANTIGEN_HS_HOME )) && frameworks+=("Antigen-hs")
-	(( $+functions[upgrade_oh_my_zsh] )) && {
-		ohmyzsh=1
-		frameworks+=("Oh My Zsh")
-	}
-	(( $+ZPREZTODIR )) && frameworks+=("Prezto")
-	(( $+ZPLUG_ROOT )) && frameworks+=("Zplug")
-	(( $+ZPLGM )) && frameworks+=("Zplugin")
-
-	(( $#frameworks == 0 )) && frameworks+=("None")
-	print - "- Detected frameworks: ${(j:, :)frameworks}"
-
-	if (( ohmyzsh )); then
-		print - "    - Oh My Zsh:"
-		print - "        - Plugins: ${(j:, :)plugins}"
-	fi
 }
 
 prompt_pure_setup() {
