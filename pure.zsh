@@ -108,8 +108,6 @@ prompt_pure_set_colors() {
 prompt_pure_preprompt_render() {
 	setopt localoptions noshwordsplit
 
-	unset prompt_pure_async_render_requested
-
 	# Initialize the preprompt array.
 	local -a preprompt_parts
 
@@ -125,10 +123,7 @@ prompt_pure_preprompt_render() {
 	preprompt_parts+=('%F{${prompt_pure_colors[path]}}%~%f')
 
 	# Git branch status info.
-	typeset -gA prompt_pure_vcs_info
-	if [[ -n $prompt_pure_vcs_info[branch] ]]; then
-		preprompt_parts+=("%F{$prompt_pure_colors[git:branch]}"'${prompt_pure_vcs_info[branch]}''%f')
-	fi
+    preprompt_parts+=("%F{$prompt_pure_colors[git:branch]}"'${vcs_info_msg_0_//\%/%%}''%f')
 
 	# Execution time.
 	[[ -n $prompt_pure_cmd_exec_time ]] && preprompt_parts+=('%F{$prompt_pure_colors[execution_time]}${prompt_pure_cmd_exec_time}%f')
@@ -180,8 +175,17 @@ prompt_pure_precmd() {
 	# Modify the colors if some have changed..
 	prompt_pure_set_colors
 
-	# Perform async Git fetch
-	prompt_pure_async_tasks
+	# Configure `vcs_info`. This frees up `vcs_info`
+	# to be used or configured as the user pleases.
+	zstyle ':vcs_info:*' enable git
+	zstyle ':vcs_info:*' use-simple true
+	# Only export four message variables from `vcs_info`.
+	zstyle ':vcs_info:*' max-exports 2
+	# Export branch (%b)
+	zstyle ':vcs_info:git*' formats '%b'
+	zstyle ':vcs_info:git*' actionformats '%b'
+
+	vcs_info
 
 	# Check if we should display the virtual env. We use a sufficiently high
 	# index of psvar (12) here to avoid collisions with user defined entries.
@@ -197,15 +201,6 @@ prompt_pure_precmd() {
 		export VIRTUAL_ENV_DISABLE_PROMPT=12
 	fi
 
-	# Nix package manager integration. If used from within 'nix shell' - shell name is shown like so:
-	# ~/Projects/flake-utils-plus master
-	# flake-utils-plus ❯
-	if zstyle -T ":prompt:pure:environment:nix-shell" show; then
-		if [[ -n $IN_NIX_SHELL ]]; then
-			psvar[12]="${name:-nix-shell}"
-		fi
-	fi
-
 	# Make sure VIM prompt is reset.
 	prompt_pure_reset_prompt_symbol
 
@@ -216,122 +211,6 @@ prompt_pure_precmd() {
 		print "WARNING: Oh My Zsh themes are enabled (ZSH_THEME='${ZSH_THEME}'). Pure might not be working correctly."
 		unset ZSH_THEME  # Only show this warning once.
 	fi
-}
-
-prompt_pure_async_vcs_info() {
-	setopt localoptions noshwordsplit
-
-	# Configure `vcs_info` inside an async task. This frees up `vcs_info`
-	# to be used or configured as the user pleases.
-	zstyle ':vcs_info:*' enable git
-	zstyle ':vcs_info:*' use-simple true
-	# Only export four message variables from `vcs_info`.
-	zstyle ':vcs_info:*' max-exports 2
-	# Export branch (%b)
-	zstyle ':vcs_info:git*' formats '%b'
-	zstyle ':vcs_info:git*' actionformats '%b'
-
-	vcs_info
-
-	local -A info
-	info[pwd]=$PWD
-	info[branch]=${vcs_info_msg_0_//\%/%%}
-
-	print -r - ${(@kvq)info}
-}
-
-prompt_pure_async_init() {
-	typeset -g prompt_pure_async_inited
-	if ((${prompt_pure_async_inited:-0})); then
-		return
-	fi
-	prompt_pure_async_inited=1
-	async_start_worker "prompt_pure" -u -n
-	async_register_callback "prompt_pure" prompt_pure_async_callback
-}
-
-prompt_pure_async_tasks() {
-	setopt localoptions noshwordsplit
-
-	# Initialize the async worker.
-	prompt_pure_async_init
-
-	# Update the current working directory of the async worker.
-	async_worker_eval "prompt_pure" builtin cd -q $PWD
-
-	typeset -gA prompt_pure_vcs_info
-
-	local -H MATCH MBEGIN MEND
-	if [[ $PWD != ${prompt_pure_vcs_info[pwd]}* ]]; then
-		# Stop any running async jobs.
-		async_flush_jobs "prompt_pure"
-
-		# Reset Git preprompt variables, switching working tree.
-		unset prompt_pure_git_fetch_pattern
-		prompt_pure_vcs_info[branch]=
-	fi
-	unset MATCH MBEGIN MEND
-
-	async_job "prompt_pure" prompt_pure_async_vcs_info
-}
-
-prompt_pure_async_callback() {
-	setopt localoptions noshwordsplit
-	local job=$1 code=$2 output=$3 exec_time=$4 next_pending=$6
-	local do_render=0
-
-	case $job in
-		\[async])
-			# Handle all the errors that could indicate a crashed
-			# async worker. See zsh-async documentation for the
-			# definition of the exit codes.
-			if (( code == 2 )) || (( code == 3 )) || (( code == 130 )); then
-				# Our worker died unexpectedly, try to recover immediately.
-				# TODO(mafredri): Do we need to handle next_pending
-				#                 and defer the restart?
-				typeset -g prompt_pure_async_inited=0
-				async_stop_worker prompt_pure
-				prompt_pure_async_init   # Reinit the worker.
-				prompt_pure_async_tasks  # Restart all tasks.
-
-				# Reset render state due to restart.
-				unset prompt_pure_async_render_requested
-			fi
-			;;
-		\[async/eval])
-			if (( code )); then
-				# Looks like async_worker_eval failed,
-				# rerun async tasks just in case.
-				prompt_pure_async_tasks
-			fi
-			;;
-		prompt_pure_async_vcs_info)
-			local -A info
-			typeset -gA prompt_pure_vcs_info
-
-			# Parse output (z) and unquote as array (Q@).
-			info=("${(Q@)${(z)output}}")
-			local -H MATCH MBEGIN MEND
-			if [[ $info[pwd] != $PWD ]]; then
-				# The path has changed since the check started, abort.
-				return
-			fi
-			unset MATCH MBEGIN MEND
-
-			# Always update branch
-			prompt_pure_vcs_info[branch]=$info[branch]
-
-			do_render=1
-			;;
-	esac
-
-	if (( next_pending )); then
-		(( do_render )) && typeset -g prompt_pure_async_render_requested=1
-		return
-	fi
-
-	[[ ${prompt_pure_async_render_requested:-$do_render} = 1 ]] && prompt_pure_preprompt_render
-	unset prompt_pure_async_render_requested
 }
 
 prompt_pure_reset_prompt() {
@@ -454,7 +333,6 @@ prompt_pure_setup() {
 
 	autoload -Uz add-zsh-hook
 	autoload -Uz vcs_info
-	autoload -Uz async && async
 
 	# The `add-zle-hook-widget` function is not guaranteed to be available.
 	# It was added in Zsh 5.3.
