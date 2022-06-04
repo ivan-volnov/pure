@@ -33,10 +33,6 @@ Most prompts are cluttered, ugly and slow. We wanted something visually pleasing
 │      ┌──────────────────────────────────────────── host
 │      │           ┌──────────────────────────────── path
 │      │           │          ┌───────────────────── git:branch
-│      │           │          │
-│      │           │          │
-│      │           │          │
-│      │           │          │
 │      │           │          │      ┌────────────── execution_time
 │      │           │          │      │
 zaphod@heartofgold ~/dev/pure master 42s
