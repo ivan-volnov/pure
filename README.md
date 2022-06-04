@@ -24,8 +24,8 @@ Most prompts are cluttered, ugly and slow. We wanted something visually pleasing
 
 ### The fork goal
 
-- Remove second zsh instance per open console
-- Code cleanup
+- Remove a useless zsh subprocess per each instance (async workers)
+- Code cleanup and simplicity
 
 ## Install
 

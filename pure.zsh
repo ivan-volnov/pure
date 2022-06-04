@@ -79,16 +79,6 @@ prompt_pure_set_title() {
 }
 
 prompt_pure_preexec() {
-	if [[ -n $prompt_pure_git_fetch_pattern ]]; then
-		# Detect when Git is performing pull/fetch, including Git aliases.
-		local -H MATCH MBEGIN MEND match mbegin mend
-		if [[ $2 =~ (git|hub)\ (.*\ )?($prompt_pure_git_fetch_pattern)(\ .*)?$ ]]; then
-			# We must flush the async jobs to cancel our git fetch in order
-			# to avoid conflicts with the user issued pull / fetch.
-			async_flush_jobs 'prompt_pure'
-		fi
-	fi
-
 	typeset -g prompt_pure_cmd_timestamp=$EPOCHSECONDS
 
 	# Shows the current directory and executed command in the title while a process is active.
@@ -120,9 +110,6 @@ prompt_pure_preprompt_render() {
 
 	unset prompt_pure_async_render_requested
 
-	# Set color for Git branch status
-	local git_color=$prompt_pure_colors[git:branch]
-
 	# Initialize the preprompt array.
 	local -a preprompt_parts
 
@@ -140,7 +127,7 @@ prompt_pure_preprompt_render() {
 	# Git branch status info.
 	typeset -gA prompt_pure_vcs_info
 	if [[ -n $prompt_pure_vcs_info[branch] ]]; then
-		preprompt_parts+=("%F{$git_color}"'${prompt_pure_vcs_info[branch]}''%f')
+		preprompt_parts+=("%F{$prompt_pure_colors[git:branch]}"'${prompt_pure_vcs_info[branch]}''%f')
 	fi
 
 	# Execution time.
@@ -260,16 +247,15 @@ prompt_pure_async_vcs_info() {
 	zstyle ':vcs_info:*' use-simple true
 	# Only export four message variables from `vcs_info`.
 	zstyle ':vcs_info:*' max-exports 2
-	# Export branch (%b), Git toplevel (%R)
-	zstyle ':vcs_info:git*' formats '%b' '%R'
-	zstyle ':vcs_info:git*' actionformats '%b' '%R'
+	# Export branch (%b)
+	zstyle ':vcs_info:git*' formats '%b'
+	zstyle ':vcs_info:git*' actionformats '%b'
 
 	vcs_info
 
 	local -A info
 	info[pwd]=$PWD
 	info[branch]=${vcs_info_msg_0_//\%/%%}
-	info[top]=$vcs_info_msg_1_
 
 	print -r - ${(@kvq)info}
 }
@@ -303,16 +289,10 @@ prompt_pure_async_tasks() {
 		# Reset Git preprompt variables, switching working tree.
 		unset prompt_pure_git_fetch_pattern
 		prompt_pure_vcs_info[branch]=
-		prompt_pure_vcs_info[top]=
 	fi
 	unset MATCH MBEGIN MEND
 
 	async_job "prompt_pure" prompt_pure_async_vcs_info
-
-	# Only perform tasks inside a Git working tree.
-	[[ -n $prompt_pure_vcs_info[top] ]] || return
-
-	prompt_pure_async_refresh
 }
 
 prompt_pure_async_refresh() {
@@ -367,26 +347,10 @@ prompt_pure_async_callback() {
 				# The path has changed since the check started, abort.
 				return
 			fi
-			# Check if Git top-level has changed.
-			if [[ $info[top] = $prompt_pure_vcs_info[top] ]]; then
-				# If the stored pwd is part of $PWD, $PWD is shorter and likelier
-				# to be top-level, so we update pwd.
-				if [[ $prompt_pure_vcs_info[pwd] = ${PWD}* ]]; then
-					prompt_pure_vcs_info[pwd]=$PWD
-				fi
-			else
-				# Store $PWD to detect if we (maybe) left the Git path.
-				prompt_pure_vcs_info[pwd]=$PWD
-			fi
 			unset MATCH MBEGIN MEND
 
-			# The update has a Git top-level set, which means we just entered a new
-			# Git directory. Run the async refresh tasks.
-			[[ -n $info[top] ]] && [[ -z $prompt_pure_vcs_info[top] ]] && prompt_pure_async_refresh
-
-			# Always update branch, top-level
+			# Always update branch
 			prompt_pure_vcs_info[branch]=$info[branch]
-			prompt_pure_vcs_info[top]=$info[top]
 
 			do_render=1
 			;;
