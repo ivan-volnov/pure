@@ -27,7 +27,7 @@ Most prompts are cluttered, ugly and slow. We wanted something visually pleasing
 - Debloat the code that executes every time you open a terminal window
 - The prompt must only tell you where you are now. It's not a fancy git tool
 
-### The prompt structure
+### Prompt structure
 
 ```
 ┌─────────────────────────────────────────────────── user
