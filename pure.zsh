@@ -90,21 +90,6 @@ prompt_pure_preexec() {
 	export VIRTUAL_ENV_DISABLE_PROMPT=${VIRTUAL_ENV_DISABLE_PROMPT:-12}
 }
 
-# Change the colors if their value are different from the current ones.
-prompt_pure_set_colors() {
-	local color_temp key value
-	for key value in ${(kv)prompt_pure_colors}; do
-		zstyle -t ":prompt:pure:$key" color "$value"
-		case $? in
-			1) # The current style is different from the one from zstyle.
-				zstyle -s ":prompt:pure:$key" color color_temp
-				prompt_pure_colors[$key]=$color_temp ;;
-			2) # No style is defined.
-				prompt_pure_colors[$key]=$prompt_pure_colors_default[$key] ;;
-		esac
-	done
-}
-
 prompt_pure_preprompt_render() {
 	setopt localoptions noshwordsplit
 
@@ -172,15 +157,12 @@ prompt_pure_precmd() {
 	# Shows the full path in the title.
 	prompt_pure_set_title 'expand-prompt' '%~'
 
-	# Modify the colors if some have changed..
-	prompt_pure_set_colors
-
 	# Configure `vcs_info`. This frees up `vcs_info`
 	# to be used or configured as the user pleases.
 	zstyle ':vcs_info:*' enable git
 	zstyle ':vcs_info:*' use-simple true
 	# Only export four message variables from `vcs_info`.
-	zstyle ':vcs_info:*' max-exports 2
+	zstyle ':vcs_info:*' max-exports 1
 	# Export branch (%b)
 	zstyle ':vcs_info:git*' formats '%b'
 	zstyle ':vcs_info:git*' actionformats '%b'
@@ -295,7 +277,6 @@ prompt_pure_state_setup() {
 	[[ $UID -eq 0 ]] && username='%F{$prompt_pure_colors[user:root]}%n%f'"$hostname"
 
 	typeset -gA prompt_pure_state
-	prompt_pure_state[version]="1.20.1"
 	prompt_pure_state+=(
 		username "$username"
 		prompt	 "${PURE_PROMPT_SYMBOL:-❯}"
@@ -339,8 +320,8 @@ prompt_pure_setup() {
 	autoload -Uz +X add-zle-hook-widget 2>/dev/null
 
 	# Set the colors.
-	typeset -gA prompt_pure_colors_default prompt_pure_colors
-	prompt_pure_colors_default=(
+	typeset -gA prompt_pure_colors
+	prompt_pure_colors=(
 		execution_time       yellow
 		git:branch           242
 		host                 242
@@ -353,7 +334,6 @@ prompt_pure_setup() {
 		user:root            default
 		virtualenv           242
 	)
-	prompt_pure_colors=("${(@kv)prompt_pure_colors_default}")
 
 	add-zsh-hook precmd prompt_pure_precmd
 	add-zsh-hook preexec prompt_pure_preexec
