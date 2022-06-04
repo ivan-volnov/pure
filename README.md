@@ -1,8 +1,6 @@
 # Pure
 
-> Pretty, minimal and fast ZSH prompt
-
-Lightweight fork of popular pure.zsh prompt by sindresorhus
+> Pretty, minimal and fast ZSH prompt. Even much pure and minimal now
 
 <img src="screenshot.png" width="864">
 
@@ -89,7 +87,6 @@ Colors can be changed by using [`zstyle`](http://zsh.sourceforge.net/Doc/Release
 - `execution_time` (yellow) - The execution time of the last command when exceeding `PURE_CMD_MAX_EXEC_TIME`.
 - `git:branch` (242) - The name of the current branch when in a Git repository.
 - `git:branch:cached` (red) - The name of the current branch when the data isn't fresh.
-- `git:action` (242) - The current action in progress (cherry-pick, rebase, etc.) when in a Git repository.
 - `git:dirty` (218) - The asterisk showing the branch is dirty.
 - `host` (242) - The hostname when on a remote machine.
 - `path` (blue) - The current path, for example, `PWD`.
@@ -104,21 +101,21 @@ Colors can be changed by using [`zstyle`](http://zsh.sourceforge.net/Doc/Release
 The following diagram shows where each color is applied on the prompt:
 
 ```
-┌────────────────────────────────────────────────────── user
-│      ┌─────────────────────────────────────────────── host
-│      │           ┌─────────────────────────────────── path
-│      │           │          ┌──────────────────────── git:branch
-│      │           │          │     ┌────────────────── git:dirty
-│      │           │          │     │ ┌──────────────── git:action
+┌─────────────────────────────────────────────── user
+│      ┌──────────────────────────────────────── host
+│      │           ┌──────────────────────────── path
+│      │           │          ┌───────────────── git:branch
+│      │           │          │     ┌─────────── git:dirty
+│      │           │          │     │
+│      │           │          │     │
+│      │           │          │     │
+│      │           │          │     │ ┌───────── execution_time
 │      │           │          │     │ │
-│      │           │          │     │ │
-│      │           │          │     │ │        ┌─────── execution_time
-│      │           │          │     │ │        │
-zaphod@heartofgold ~/dev/pure master* rebase-i 42s
+zaphod@heartofgold ~/dev/pure master* 42s
 venv ❯
 │    │
-│    └───────────────────────────────────────────────── prompt
-└────────────────────────────────────────────────────── virtualenv (or prompt:continuation)
+│    └────────────────────────────────────────── prompt
+└─────────────────────────────────────────────── virtualenv (or prompt:continuation)
 ```
 
 ### RGB colors

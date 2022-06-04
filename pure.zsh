@@ -1,12 +1,10 @@
 # Pure
-# by Sindre Sorhus
-# https://github.com/sindresorhus/pure
+# https://github.com/ivan-volnov/pure
 # MIT License
 
 # For my own and others sanity
 # git:
 # %b => current branch
-# %a => current action (rebase/merge)
 # prompt:
 # %F => color dict
 # %f => reset color
@@ -26,7 +24,6 @@
 
 # Turns seconds into human readable time.
 # 165392 => 1d 21h 56m 32s
-# https://github.com/sindresorhus/pretty-time-zsh
 prompt_pure_human_time_to_var() {
 	local human total_seconds=$1 var=$2
 	local days=$(( total_seconds / 60 / 60 / 24 ))
@@ -147,10 +144,6 @@ prompt_pure_preprompt_render() {
 	if [[ -n $prompt_pure_vcs_info[branch] ]]; then
 		preprompt_parts+=("%F{$git_color}"'${prompt_pure_vcs_info[branch]}'"%F{$git_dirty_color}"'${prompt_pure_git_dirty}%f')
 	fi
-	# Git action (for example, merge).
-	if [[ -n $prompt_pure_vcs_info[action] ]]; then
-		preprompt_parts+=("%F{$prompt_pure_colors[git:action]}"'$prompt_pure_vcs_info[action]%f')
-	fi
 
 	# Execution time.
 	[[ -n $prompt_pure_cmd_exec_time ]] && preprompt_parts+=('%F{$prompt_pure_colors[execution_time]}${prompt_pure_cmd_exec_time}%f')
@@ -236,7 +229,6 @@ prompt_pure_precmd() {
 
 	if [[ -n $ZSH_THEME ]]; then
 		print "WARNING: Oh My Zsh themes are enabled (ZSH_THEME='${ZSH_THEME}'). Pure might not be working correctly."
-		print "For more information, see: https://github.com/sindresorhus/pure#oh-my-zsh"
 		unset ZSH_THEME  # Only show this warning once.
 	fi
 }
@@ -269,10 +261,10 @@ prompt_pure_async_vcs_info() {
 	zstyle ':vcs_info:*' enable git
 	zstyle ':vcs_info:*' use-simple true
 	# Only export four message variables from `vcs_info`.
-	zstyle ':vcs_info:*' max-exports 3
-	# Export branch (%b), Git toplevel (%R), action (rebase/cherry-pick) (%a)
-	zstyle ':vcs_info:git*' formats '%b' '%R' '%a'
-	zstyle ':vcs_info:git*' actionformats '%b' '%R' '%a'
+	zstyle ':vcs_info:*' max-exports 2
+	# Export branch (%b), Git toplevel (%R)
+	zstyle ':vcs_info:git*' formats '%b' '%R'
+	zstyle ':vcs_info:git*' actionformats '%b' '%R'
 
 	vcs_info
 
@@ -280,7 +272,6 @@ prompt_pure_async_vcs_info() {
 	info[pwd]=$PWD
 	info[branch]=${vcs_info_msg_0_//\%/%%}
 	info[top]=$vcs_info_msg_1_
-	info[action]=$vcs_info_msg_2_
 
 	print -r - ${(@kvq)info}
 }
@@ -442,7 +433,6 @@ prompt_pure_async_callback() {
 			# Always update branch, top-level
 			prompt_pure_vcs_info[branch]=$info[branch]
 			prompt_pure_vcs_info[top]=$info[top]
-			prompt_pure_vcs_info[action]=$info[action]
 
 			do_render=1
 			;;
@@ -665,7 +655,6 @@ prompt_pure_setup() {
 		execution_time       yellow
 		git:branch           242
 		git:branch:cached    red
-		git:action           yellow
 		git:dirty            218
 		host                 242
 		path                 blue
