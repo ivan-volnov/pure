@@ -218,26 +218,6 @@ prompt_pure_precmd() {
 	fi
 }
 
-prompt_pure_async_git_aliases() {
-	setopt localoptions noshwordsplit
-	local -a gitalias pullalias
-
-	# List all aliases and split on newline.
-	gitalias=(${(@f)"$(command git config --get-regexp "^alias\.")"})
-	for line in $gitalias; do
-		parts=(${(@)=line})           # Split line on spaces.
-		aliasname=${parts[1]#alias.}  # Grab the name (alias.[name]).
-		shift parts                   # Remove `aliasname`
-
-		# Check alias for pull or fetch. Must be exact match.
-		if [[ $parts =~ ^(.*\ )?(pull|fetch)(\ .*)?$ ]]; then
-			pullalias+=($aliasname)
-		fi
-	done
-
-	print -- ${(j:|:)pullalias}  # Join on pipe, for use in regex.
-}
-
 prompt_pure_async_vcs_info() {
 	setopt localoptions noshwordsplit
 
@@ -295,17 +275,6 @@ prompt_pure_async_tasks() {
 	async_job "prompt_pure" prompt_pure_async_vcs_info
 }
 
-prompt_pure_async_refresh() {
-	setopt localoptions noshwordsplit
-
-	if [[ -z $prompt_pure_git_fetch_pattern ]]; then
-		# We set the pattern here to avoid redoing the pattern check until the
-		# working tree has changed. Pull and fetch are always valid patterns.
-		typeset -g prompt_pure_git_fetch_pattern="pull|fetch"
-		async_job "prompt_pure" prompt_pure_async_git_aliases
-	fi
-}
-
 prompt_pure_async_callback() {
 	setopt localoptions noshwordsplit
 	local job=$1 code=$2 output=$3 exec_time=$4 next_pending=$6
@@ -353,12 +322,6 @@ prompt_pure_async_callback() {
 			prompt_pure_vcs_info[branch]=$info[branch]
 
 			do_render=1
-			;;
-		prompt_pure_async_git_aliases)
-			if [[ -n $output ]]; then
-				# Append custom Git aliases to the predefined ones.
-				prompt_pure_git_fetch_pattern+="|$output"
-			fi
 			;;
 	esac
 
