@@ -311,68 +311,6 @@ prompt_pure_async_git_dirty() {
 	return $?
 }
 
-prompt_pure_async_git_fetch() {
-	setopt localoptions noshwordsplit
-
-	local only_upstream=${1:-0}
-
-	# Sets `GIT_TERMINAL_PROMPT=0` to disable authentication prompt for Git fetch (Git 2.3+).
-	export GIT_TERMINAL_PROMPT=0
-	# Set SSH `BachMode` to disable all interactive SSH password prompting.
-	export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-"ssh"} -o BatchMode=yes"
-
-	local -a remote
-	if ((only_upstream)); then
-		local ref
-		ref=$(command git symbolic-ref -q HEAD)
-		# Set remote to only fetch information for the current branch.
-		remote=($(command git for-each-ref --format='%(upstream:remotename) %(refname)' $ref))
-		if [[ -z $remote[1] ]]; then
-			# No remote specified for this branch, skip fetch.
-			return 97
-		fi
-	fi
-
-	# Default return code, which indicates Git fetch failure.
-	local fail_code=99
-
-	# Guard against all forms of password prompts. By setting the shell into
-	# MONITOR mode we can notice when a child process prompts for user input
-	# because it will be suspended. Since we are inside an async worker, we
-	# have no way of transmitting the password and the only option is to
-	# kill it. If we don't do it this way, the process will corrupt with the
-	# async worker.
-	setopt localtraps monitor
-
-	# Make sure local HUP trap is unset to allow for signal propagation when
-	# the async worker is flushed.
-	trap - HUP
-
-	trap '
-		# Unset trap to prevent infinite loop
-		trap - CHLD
-		if [[ $jobstates = suspended* ]]; then
-			# Set fail code to password prompt and kill the fetch.
-			fail_code=98
-			kill %%
-		fi
-	' CHLD
-
-	# Do git fetch and avoid fetching tags or
-	# submodules to speed up the process.
-	command git -c gc.auto=0 fetch \
-		--quiet \
-		--no-tags \
-		--recurse-submodules=no \
-		$remote &>/dev/null &
-	wait $! || return $fail_code
-
-	unsetopt monitor
-
-	# Check arrow status after a successful `git fetch`.
-	prompt_pure_async_git_arrows
-}
-
 prompt_pure_async_git_arrows() {
 	setopt localoptions noshwordsplit
 	command git rev-list --left-right --count HEAD...@'{u}'
@@ -453,13 +391,6 @@ prompt_pure_async_refresh() {
 	fi
 
 	async_job "prompt_pure" prompt_pure_async_git_arrows
-
-	# Do not perform `git fetch` if it is disabled or in home folder.
-	if (( ${PURE_GIT_PULL:-1} )) && [[ $prompt_pure_vcs_info[top] != $HOME ]]; then
-		zstyle -t :prompt:pure:git:fetch only_upstream
-		local only_upstream=$((? == 0))
-		async_job "prompt_pure" prompt_pure_async_git_fetch $only_upstream
-	fi
 
 	# If dirty checking is sufficiently fast,
 	# tell the worker to check it again, or wait for timeout.
@@ -576,9 +507,7 @@ prompt_pure_async_callback() {
 			# rendering of the preprompt will the result appear in a different color.
 			(( $exec_time > 5 )) && prompt_pure_git_last_dirty_check_timestamp=$EPOCHSECONDS
 			;;
-		prompt_pure_async_git_fetch|prompt_pure_async_git_arrows)
-			# `prompt_pure_async_git_fetch` executes `prompt_pure_async_git_arrows`
-			# after a successful fetch.
+		prompt_pure_async_git_arrows)
 			case $code in
 				0)
 					local REPLY
