@@ -17,7 +17,7 @@ Most prompts are cluttered, ugly and slow. We wanted something visually pleasing
 - Prompt character turns red if the last command didn't exit with `0`.
 - Command execution time will be displayed if it exceeds the set threshold.
 - Username and host only displayed when in an SSH session or a container.
-- Shows the current path in the title and the [current folder & command](screenshot-title-cmd.png) when a process is running.
+- Shows the current path in the title and the [current folder & command](https://github.com/ivan-volnov/pure/blob/0884b7b5524d41b734f1f353a329fbf03e35241a/screenshot-title-cmd.png) when a process is running.
 - Support VI-mode indication by reverse prompt symbol (Zsh 5.3+).
 - Makes an excellent starting point for your own custom prompt.
 
