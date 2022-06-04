@@ -26,6 +26,26 @@ Most prompts are cluttered, ugly and slow. We wanted something visually pleasing
 - Remove a useless zsh subprocess per each instance (async workers)
 - Code cleanup and simplicity
 
+### The prompt structure
+
+```
+┌─────────────────────────────────────────────────── user
+│      ┌──────────────────────────────────────────── host
+│      │           ┌──────────────────────────────── path
+│      │           │          ┌───────────────────── git:branch
+│      │           │          │
+│      │           │          │
+│      │           │          │
+│      │           │          │
+│      │           │          │      ┌────────────── execution_time
+│      │           │          │      │
+zaphod@heartofgold ~/dev/pure master 42s
+venv ❯
+│    │
+│    └────────────────────────────────────────────── prompt
+└─────────────────────────────────────────────────── virtualenv (or prompt:continuation)
+```
+
 ## Install
 
 ### Manually
@@ -80,26 +100,6 @@ Colors can be changed by using [`zstyle`](http://zsh.sourceforge.net/Doc/Release
 - `user` (242) - The username when on remote machine.
 - `user:root` (default) - The username when the user is root.
 - `virtualenv` (242) - The name of the Python `virtualenv` when in use.
-
-The following diagram shows where each color is applied on the prompt:
-
-```
-┌─────────────────────────────────────────────────── user
-│      ┌──────────────────────────────────────────── host
-│      │           ┌──────────────────────────────── path
-│      │           │          ┌───────────────────── git:branch
-│      │           │          │
-│      │           │          │
-│      │           │          │
-│      │           │          │
-│      │           │          │      ┌────────────── execution_time
-│      │           │          │      │
-zaphod@heartofgold ~/dev/pure master 42s
-venv ❯
-│    │
-│    └────────────────────────────────────────────── prompt
-└─────────────────────────────────────────────────── virtualenv (or prompt:continuation)
-```
 
 ### RGB colors
 
