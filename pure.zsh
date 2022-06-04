@@ -161,7 +161,7 @@ prompt_pure_precmd() {
 	# to be used or configured as the user pleases.
 	zstyle ':vcs_info:*' enable git
 	zstyle ':vcs_info:*' use-simple true
-	# Only export four message variables from `vcs_info`.
+	# Only export one message variables from `vcs_info`.
 	zstyle ':vcs_info:*' max-exports 1
 	# Export branch (%b)
 	zstyle ':vcs_info:git*' formats '%b'
