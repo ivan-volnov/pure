@@ -77,6 +77,7 @@ prompt pure
 | **`PURE_CMD_MAX_EXEC_TIME`**     | The max execution time of a process before its run time is shown when it exits.                | `5` seconds    |
 | **`PURE_PROMPT_SYMBOL`**         | Defines the prompt symbol.                                                                     | `❯`            |
 | **`PURE_PROMPT_VICMD_SYMBOL`**   | Defines the prompt symbol used when the `vicmd` keymap is active (VI-mode).                    | `❮`            |
+| **`PURE_PREPEND_NEW_LINE=1`**    | Do not add a new line before the prompt.                                                       |                |
 
 ## Colors
 
