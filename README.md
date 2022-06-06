@@ -57,7 +57,7 @@ git clone https://github.com/ivan-volnov/pure.git "$HOME/.config/zsh/pure"
 2. Add the path of the cloned repo to `$fpath` in `$HOME/.zshrc`.
 ```sh
 # .zshrc
-fpath+=$HOME/.config/zsh/pure
+fpath+=($HOME/.config/zsh/pure)
 ```
 
 ## Getting started
